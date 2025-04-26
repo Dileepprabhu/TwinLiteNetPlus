@@ -146,7 +146,7 @@ def detect(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--weight', type=str, default='pretrained/large.pth', help='model.pth path(s)')
+    parser.add_argument('--weight', type=str, default='pretrained/medium.pth', help='model.pth path(s)')
     parser.add_argument('--source', type=str, default='inference/videos', help='source')  # file/folder   ex:inference/images
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--config', type=str, choices=["nano", "small", "medium", "large"], help='Model configuration')

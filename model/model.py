@@ -485,24 +485,27 @@ class TwinLiteNetPlus(nn.Module):
     This class defines the ESPNet network
     '''
 
-    def __init__(self, args=None):
-
+    def __init__(self, config='small', *other_args, **kwargs):
         super().__init__()
         chanel_img = cfg.chanel_img
-        model_cfg = cfg.sc_ch_dict[args.config] 
-        self.encoder = Encoder(args.config)
+        # if args is None:
+        #     args = type('DummyArgs', (), {})()
+        #     # Use the first key from cfg.sc_ch_dict as the default; adjust if needed
+        #     args.config = list(cfg.sc_ch_dict.keys())[0]
+        model_cfg = cfg.sc_ch_dict[config]
+        self.encoder = Encoder(config)
         self.sigle_ll = False
         self.sigle_da = False
 
-        self.caam = CAAM(feat_in=cfg.sc_ch_dict[args.config]['chanels'][2], num_classes=cfg.sc_ch_dict[args.config]['chanels'][2],bin_size =(2,4), norm_layer=nn.BatchNorm2d)
-        self.conv_caam = ConvBatchnormRelu(cfg.sc_ch_dict[args.config]['chanels'][2],cfg.sc_ch_dict[args.config]['chanels'][1])
+        self.caam = CAAM(feat_in=cfg.sc_ch_dict[config]['chanels'][2], num_classes=cfg.sc_ch_dict[config]['chanels'][2],bin_size =(2,4), norm_layer=nn.BatchNorm2d)
+        self.conv_caam = ConvBatchnormRelu(cfg.sc_ch_dict[config]['chanels'][2],cfg.sc_ch_dict[config]['chanels'][1])
 
-        self.up_1_da = UpConvBlock(cfg.sc_ch_dict[args.config]['chanels'][1],cfg.sc_ch_dict[args.config]['chanels'][0]) # out: Hx4, Wx4
-        self.up_2_da = UpConvBlock(cfg.sc_ch_dict[args.config]['chanels'][0],8) #out: Hx2, Wx2
+        self.up_1_da = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][1],cfg.sc_ch_dict[config]['chanels'][0]) # out: Hx4, Wx4
+        self.up_2_da = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][0],8) #out: Hx2, Wx2
         self.out_da = UpConvBlock(8,2,last=True)  
 
-        self.up_1_ll = UpConvBlock(cfg.sc_ch_dict[args.config]['chanels'][1],cfg.sc_ch_dict[args.config]['chanels'][0]) # out: Hx4, Wx4
-        self.up_2_ll = UpConvBlock(cfg.sc_ch_dict[args.config]['chanels'][0],8) #out: Hx2, Wx2
+        self.up_1_ll = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][1],cfg.sc_ch_dict[config]['chanels'][0]) # out: Hx4, Wx4
+        self.up_2_ll = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][0],8) #out: Hx2, Wx2
         self.out_ll = UpConvBlock(8,2,last=True)
 
 
