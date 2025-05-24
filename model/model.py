@@ -484,30 +484,32 @@ class TwinLiteNetPlus(nn.Module):
     '''
     This class defines the ESPNet network
     '''
-
-    def __init__(self, config='small', *other_args, **kwargs):
+    def __init__(self, config='small', lane_only=False, *other_args, **kwargs):
         super().__init__()
         chanel_img = cfg.chanel_img
-        # if args is None:
-        #     args = type('DummyArgs', (), {})()
-        #     # Use the first key from cfg.sc_ch_dict as the default; adjust if needed
-        #     args.config = list(cfg.sc_ch_dict.keys())[0]
         model_cfg = cfg.sc_ch_dict[config]
         self.encoder = Encoder(config)
+        # new parameter to control lane-only mode
+        self.lane_only = lane_only
         self.sigle_ll = False
         self.sigle_da = False
 
-        self.caam = CAAM(feat_in=cfg.sc_ch_dict[config]['chanels'][2], num_classes=cfg.sc_ch_dict[config]['chanels'][2],bin_size =(2,4), norm_layer=nn.BatchNorm2d)
-        self.conv_caam = ConvBatchnormRelu(cfg.sc_ch_dict[config]['chanels'][2],cfg.sc_ch_dict[config]['chanels'][1])
+        self.caam = CAAM(feat_in=model_cfg['chanels'][2], num_classes=model_cfg['chanels'][2],
+                           bin_size =(2,4), norm_layer=nn.BatchNorm2d)
+        self.conv_caam = ConvBatchnormRelu(model_cfg['chanels'][2],model_cfg['chanels'][1])
 
-        self.up_1_da = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][1],cfg.sc_ch_dict[config]['chanels'][0]) # out: Hx4, Wx4
-        self.up_2_da = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][0],8) #out: Hx2, Wx2
-        self.out_da = UpConvBlock(8,2,last=True)  
+        if not self.lane_only:
+            self.up_1_da = UpConvBlock(model_cfg['chanels'][1],model_cfg['chanels'][0])
+            self.up_2_da = UpConvBlock(model_cfg['chanels'][0],8)
+            self.out_da = UpConvBlock(8,2,last=True)
+        else:
+            self.up_1_da = None
+            self.up_2_da = None
+            self.out_da = None
 
-        self.up_1_ll = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][1],cfg.sc_ch_dict[config]['chanels'][0]) # out: Hx4, Wx4
-        self.up_2_ll = UpConvBlock(cfg.sc_ch_dict[config]['chanels'][0],8) #out: Hx2, Wx2
+        self.up_1_ll = UpConvBlock(model_cfg['chanels'][1],model_cfg['chanels'][0])
+        self.up_2_ll = UpConvBlock(model_cfg['chanels'][0],8)
         self.out_ll = UpConvBlock(8,2,last=True)
-
 
     def forward(self, input):
         '''
@@ -519,17 +521,21 @@ class TwinLiteNetPlus(nn.Module):
 
         out_caam=self.caam(out_encoder)
         out_caam=self.conv_caam(out_caam)
+        
+        if not self.lane_only:
+            out_da = self.up_1_da(out_caam,inp2)
+            out_da = self.up_2_da(out_da,inp1)
+            out_da = self.out_da(out_da)
 
-        out_da=self.up_1_da(out_caam,inp2)
-        out_da=self.up_2_da(out_da,inp1)
-        out_da=self.out_da(out_da)
-
-        out_ll=self.up_1_ll(out_caam,inp2)
-        out_ll=self.up_2_ll(out_ll,inp1)
-        out_ll=self.out_ll(out_ll)
-
-
-        return out_da,out_ll
+            out_ll = self.up_1_ll(out_caam,inp2)
+            out_ll = self.up_2_ll(out_ll,inp1)
+            out_ll = self.out_ll(out_ll)
+            return out_da, out_ll
+        else:
+            out_ll = self.up_1_ll(out_caam,inp2)
+            out_ll = self.up_2_ll(out_ll,inp1)
+            out_ll = self.out_ll(out_ll)
+            return None, out_ll
 
 def netParams(model):
     return np.sum([np.prod(parameter.size()) for parameter in model.parameters()])
