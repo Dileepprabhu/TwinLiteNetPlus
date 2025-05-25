@@ -21,8 +21,7 @@ def Run(model, img):
     img = img.float() / 255.0
     # Invoke the model with only_lane=True
     with torch.no_grad():
-        img_out = model(img)
-        lane_out = img_out[1]  # use the second output for lane predictions
+        lane_out = model(img)  # lane_only mode returns single output
         _, ll_predict = torch.max(lane_out, 1)
     # Process only lane predictions; remove drivable area branch
     LL = ll_predict.byte().cpu().data.numpy()[0] * 255

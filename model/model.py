@@ -535,7 +535,7 @@ class TwinLiteNetPlus(nn.Module):
             out_ll = self.up_1_ll(out_caam,inp2)
             out_ll = self.up_2_ll(out_ll,inp1)
             out_ll = self.out_ll(out_ll)
-            return None, out_ll
+            return out_ll
 
 def netParams(model):
     return np.sum([np.prod(parameter.size()) for parameter in model.parameters()])
